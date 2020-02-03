@@ -1292,6 +1292,15 @@ void LightInit(void)
         digitalWrite(pin[GPIO_ARIRFSEL], 1);  // Turn off RF
       }
     }
+#ifdef USE_MJ_SD01
+    if (Settings.module == MJ_SD01_DIMMER) {   // setup GPIO for dimming status on faceplate
+      pinMode(3, OUTPUT);
+      pinMode(5, OUTPUT);
+      pinMode(12, OUTPUT);
+      pinMode(14, OUTPUT);
+      pinMode(16, OUTPUT);
+    }
+#endif
   }
 
   uint32_t max_scheme = Light.max_scheme;
@@ -1547,12 +1556,20 @@ void LightPreparePower(power_t channels = 0xFFFFFFFF) {    // 1 = only RGB, 2 = 
         // if channel is non-null, channel is supposed to be on, but it is off, do Power On
         if ((Light.current_color[i]) && (!bitRead(Light.power, i))) {
           if (!Settings.flag.not_power_linked) {  // SetOption20 - Control power in relation to Dimmer/Color/Ct changes
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device + i, POWER_ON, SRC_LIGHT);
+#else
             ExecuteCommandPower(Light.device + i, POWER_ON_NO_STATE, SRC_LIGHT);
+#endif
           }
         } else {
           // if channel is zero and channel is on, set it off
           if ((0 == Light.current_color[i]) && bitRead(Light.power, i)) {
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device + i, POWER_OFF, SRC_LIGHT);
+#else
             ExecuteCommandPower(Light.device + i, POWER_OFF_NO_STATE, SRC_LIGHT);
+#endif
           }
         }
   #ifdef USE_DOMOTICZ
@@ -1564,30 +1581,54 @@ void LightPreparePower(power_t channels = 0xFFFFFFFF) {    // 1 = only RGB, 2 = 
     if (light_controller.isCTRGBLinked()) {   // linked, standard
       if (light_state.getBri() && !(Light.power)) {
         if (!Settings.flag.not_power_linked) {  // SetOption20 - Control power in relation to Dimmer/Color/Ct changes
-          ExecuteCommandPower(Light.device, POWER_ON_NO_STATE, SRC_LIGHT);
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device, POWER_ON, SRC_LIGHT);
+#else
+            ExecuteCommandPower(Light.device, POWER_ON_NO_STATE, SRC_LIGHT);
+#endif
         }
       } else if (!light_state.getBri() && Light.power) {
-        ExecuteCommandPower(Light.device, POWER_OFF_NO_STATE, SRC_LIGHT);
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device, POWER_OFF, SRC_LIGHT);
+#else
+            ExecuteCommandPower(Light.device, POWER_OFF_NO_STATE, SRC_LIGHT);
+#endif
       }
     } else {
       // RGB
       if (channels & 1) {
         if (light_state.getBriRGB() && !(Light.power & 1)) {
           if (!Settings.flag.not_power_linked) {  // SetOption20 - Control power in relation to Dimmer/Color/Ct changes
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device, POWER_ON, SRC_LIGHT);
+#else
             ExecuteCommandPower(Light.device, POWER_ON_NO_STATE, SRC_LIGHT);
+#endif
           }
         } else if (!light_state.getBriRGB() && (Light.power & 1)) {
-          ExecuteCommandPower(Light.device, POWER_OFF_NO_STATE, SRC_LIGHT);
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device, POWER_OFF, SRC_LIGHT);
+#else
+            ExecuteCommandPower(Light.device, POWER_OFF_NO_STATE, SRC_LIGHT);
+#endif
         }
       }
       // White CT
       if (channels & 2) {
         if (light_state.getBriCT() && !(Light.power & 2)) {
           if (!Settings.flag.not_power_linked) {  // SetOption20 - Control power in relation to Dimmer/Color/Ct changes
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device + 1, POWER_ON, SRC_LIGHT);
+#else
             ExecuteCommandPower(Light.device + 1, POWER_ON_NO_STATE, SRC_LIGHT);
+#endif
           }
         } else if (!light_state.getBriCT() && (Light.power & 2)) {
-          ExecuteCommandPower(Light.device + 1, POWER_OFF_NO_STATE, SRC_LIGHT);
+#ifdef USE_MJ_SD01
+            ExecuteCommandPower(Light.device + 1, POWER_OFF, SRC_LIGHT);
+#else
+            ExecuteCommandPower(Light.device + 1, POWER_OFF_NO_STATE, SRC_LIGHT);
+#endif
         }
       }
     }
@@ -1666,6 +1707,15 @@ void LightSetPower(void)
   if (Light.power != Light.old_power) {
     Light.update = true;
   }
+#ifdef USE_MJ_SD01
+  if (Settings.module == MJ_SD01_DIMMER) {  // adjust GPIO16 to turn on/off MCU power
+    if (Light.power) {
+      digitalWrite(16,LOW);
+    } else {
+      digitalWrite(16,HIGH);
+    }
+  }    
+#endif
   LightAnimate();
 }
 
@@ -2014,6 +2064,45 @@ void LightSetOutputs(const uint16_t *cur_col_10) {
   XdrvMailbox.topic = (char*)scale_col;
   if (XlgtCall(FUNC_SET_CHANNELS)) { /* Serviced */ }
   else if (XdrvCall(FUNC_SET_CHANNELS)) { /* Serviced */ }
+#ifdef USE_MJ_SD01
+  if (Settings.module == MJ_SD01_DIMMER) {   // adjust display LEDs
+    switch (cur_col[0]) {
+      case 0 ... 50:
+        digitalWrite(14, HIGH);
+        digitalWrite(12, HIGH);
+        digitalWrite(5, HIGH);
+        digitalWrite(3, HIGH);
+        break;
+      case 51 ... 101:
+        digitalWrite(14, LOW);
+        digitalWrite(12, HIGH);
+        digitalWrite(5, HIGH);
+        digitalWrite(3, HIGH);
+        break;
+      case 102 ... 152:
+        digitalWrite(14, LOW);
+        digitalWrite(12, LOW);
+        digitalWrite(5, HIGH);
+        digitalWrite(3, HIGH);
+        break;
+      case 153 ... 203:
+        digitalWrite(14, LOW);
+        digitalWrite(12, LOW);
+        digitalWrite(5, LOW);
+        digitalWrite(3, HIGH);
+        break;
+      case 204 ... 255:
+        digitalWrite(14, LOW);
+        digitalWrite(12, LOW);
+        digitalWrite(5, LOW);
+        digitalWrite(3, LOW);
+        break;
+      // default: 
+      //   // no match
+      //   break;
+    }
+  }
+#endif
   XdrvMailbox.data = tmp_data;
   XdrvMailbox.topic = tmp_topic;
 }

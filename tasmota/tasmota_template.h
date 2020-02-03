@@ -408,6 +408,9 @@ enum SupportedModules {
   SYF05,
   SONOFF_L1,
   SONOFF_IFAN03,
+#ifdef USE_MJ_SD01
+  MJ_SD01_DIMMER,
+#endif
   EXS_DIMMER,
   MAXMODULE};
 
@@ -592,6 +595,9 @@ const uint8_t kGpioNiceList[] PROGMEM = {
 #endif
 #ifdef USE_EXS_DIMMER
   GPIO_EXS_ENABLE,     // EXS MCU Enable
+#endif
+#ifdef USE_MJ_SD01
+  MJ_SD01_DIMMER,
 #endif
 #endif  // USE_LIGHT
 
@@ -845,6 +851,9 @@ const uint8_t kModuleNiceList[] PROGMEM = {
 #endif
 #ifdef USE_EXS_DIMMER
   EXS_DIMMER,
+#endif
+#ifdef USE_MJ_SD01
+  MJ_SD01_DIMMER,
 #endif
   H801,                // Light Devices
   MAGICHOME,
@@ -2165,6 +2174,28 @@ const mytmplt kModules[MAXMODULE] PROGMEM = {
      GPIO_REL4,        // GPIO15 WIFI_O3 Relay 4 (0 = Off, 1 = On) controlling the fan
      0, 0
   },
+#ifdef USE_MJ_SD01
+  { "MJ-SD01 Dimmer",    // Martin Jerry SD-01 Dimmer Switch
+     GPIO_SWT3,        // GPIO00 Up Button
+     GPIO_SWT2,        // GPIO01 Down Button
+     GPIO_USER,        // GPIO02 
+     0,                // GPIO03 Dimmer Level 5 LED(inv)
+     GPIO_LED1_INV,    // GPIO04 Red LED behind button1(inv)    
+     0,                // GPIO05 Dimmer Level 4 LED(inv)
+                       // GPIO06 (SD_CLK   Flash)
+                       // GPIO07 (SD_DATA0 Flash QIO/DIO/DOUT)
+                       // GPIO08 (SD_DATA1 Flash QIO/DIO/DOUT)
+     0,                // GPIO09 (SD_DATA2 Flash QIO or ESP8285)
+     0,                // GPIO10 (SD_DATA3 Flash QIO or ESP8285)
+                       // GPIO11 (SD_CMD   Flash)
+     0,                // GPIO12 Dimmer Level 3 LED(inv)
+     GPIO_PWM1,        // GPIO13 PWM1 Signal sent to dimming MCU
+     0,                // GPIO14 Dimmer Level 2 LED(inv)
+     GPIO_SWT1,        // GPIO15 On/Off Button (0 = Off, 1 = On)   
+     0,                // GPIO16 Dimming MCU ON/OFF State - also tied to Dimmer LED Level 1 and Blue LED on On/Off Button
+     0
+  },  
+#endif
   { "EXS Dimmer",      // EXS_DIMMER - EX-Store WiFi Dimmer v4, two channel (ESP8266 w/ separate MCU dimmer)
                        // https://ex-store.de/2-Kanal-RS232-WiFi-WLan-Dimmer-Modul-V4-fuer-Unterputzmontage-230V-3A
                        // https://ex-store.de/2-Kanal-RS232-WiFi-WLan-Dimmer-Modul-V4-fuer-Unterputzmontage-230V-3A-ESP8266-V12-Stift-und-Buchsenleisten

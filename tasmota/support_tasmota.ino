@@ -1392,6 +1392,11 @@ void GpioInit(void)
     devices_present = 2;
     SetSerial(19200, TS_SERIAL_8N1);
   }
+#ifdef USE_MJ_SD01
+  else if (MJ_SD01_DIMMER == my_module_type) {
+    Settings.flag.mqtt_serial = 0;
+  }
+#endif
   else if (CH4 == my_module_type) {
     devices_present = 4;
     SetSerial(19200, TS_SERIAL_8N1);

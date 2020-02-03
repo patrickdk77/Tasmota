@@ -438,6 +438,11 @@ void MqttPublishPowerState(uint32_t device)
     GetPowerDevice(scommand, device, sizeof(scommand), Settings.flag.device_index_enable);           // SetOption26 - Switch between POWER or POWER1
     GetTopic_P(stopic, STAT, mqtt_topic, (Settings.flag.mqtt_response) ? scommand : S_RSLT_RESULT);  // SetOption4 - Switch between MQTT RESULT or COMMAND
     Response_P(S_JSON_COMMAND_SVALUE, scommand, GetStateText(bitRead(power, device -1)));
+#ifdef USE_MJ_SD01
+    if ((Settings.module == MJ_SD01_DIMMER) || (light_type > 0)) {
+      LightState(0);
+    }
+#endif
     MqttPublish(stopic);
 
     GetTopic_P(stopic, STAT, mqtt_topic, scommand);
